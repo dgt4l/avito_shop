@@ -1,0 +1,31 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY NOT NULL,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_salt VARCHAR(255) NOT NULL,
+    coins INT CHECK (coins >= 0) NOT NULL
+);
+
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY NOT NULL,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    price INT NOT NULL
+);
+
+CREATE TABLE inventory (
+    user_id INT NOT NULL,
+    item_id INT NOT NULL,
+    quantity INT NOT NULL,
+    PRIMARY KEY (user_id, item_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY NOT NULL,
+    from_user_id INT NOT NULL,
+    to_user_id INT NOT NULL,
+    amount INT NOT NULL,
+    FOREIGN KEY (from_user_id) REFERENCES users(id),
+    FOREIGN KEY (to_user_id) REFERENCES users(id),
+    date DATE DEFAULT NOW()
+);
