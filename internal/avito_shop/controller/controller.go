@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dgt4l/avito_shop/internal/avito_shop/auth"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
@@ -77,23 +76,23 @@ func (s *ShopService) AuthUser(ctx context.Context, request *dto.AuthRequest) (*
 	if err != nil {
 		user, err = s.CreateUser(ctx, request)
 		if err != nil {
-			return &dto.AuthResponse{}, err
+			return nil, err
 		}
 
 		token, err := s.auth.GenerateToken(user)
 		if err != nil {
-			return &dto.AuthResponse{}, nil
+			return nil, err
 		}
 		return &dto.AuthResponse{Token: token}, nil
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password+s.cfg.Salt)); err != nil {
-		return &dto.AuthResponse{}, fmt.Errorf("invalid password %w", err)
+		return nil, ErrInvalidPasswd
 	}
 
 	token, err := s.auth.GenerateToken(user)
 	if err != nil {
-		return &dto.AuthResponse{}, err
+		return nil, err
 	}
 
 	return &dto.AuthResponse{Token: token}, nil

@@ -55,15 +55,19 @@ func (r *Repository) GetUser(ctx context.Context, username string) (*models.User
 	logrus.Info("GetUser: ", username)
 	var user models.User
 	err := r.db.QueryRowxContext(ctx, getFromUsers, username).StructScan(&user)
-	if err != nil {
-		return &user, err
+
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	return &user, nil
 }
 
-func (r *Repository) BuyItem(ctx context.Context, id int, item string) error {
-	logrus.Info("BuyItem: ", item)
+func (r *Repository) BuyItem(ctx context.Context, userId int, item string) error {
+	logrus.Info("r.BuyItem: ", "id: ", userId, " item: ", item)
+
 	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
@@ -77,26 +81,30 @@ func (r *Repository) BuyItem(ctx context.Context, id int, item string) error {
 
 	var itemModel models.Item
 	err = tx.QueryRowxContext(ctx, getFromItems, item).StructScan(&itemModel)
-	if err != nil {
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return ErrItemNotFound
+	} else if err != nil {
 		return err
 	}
 
 	var userCoins int
-	err = tx.QueryRowxContext(ctx, getCoinsFromUser, id).Scan(&userCoins)
-	if err != nil {
+	err = tx.QueryRowxContext(ctx, getCoinsFromUser, userId).Scan(&userCoins)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
 		return err
 	}
 
 	if userCoins < itemModel.Price {
-		return errors.New("Not enough coins")
+		return ErrNotEnoughCoins
 	}
 
-	_, err = tx.ExecContext(ctx, updateCoinsFromUser, itemModel.Price, id)
+	_, err = tx.ExecContext(ctx, updateCoinsFromUser, itemModel.Price, userId)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, insertToInventory, id, itemModel.Id)
+	_, err = tx.ExecContext(ctx, insertToInventory, userId, itemModel.Id)
 	if err != nil {
 		return err
 	}
@@ -113,26 +121,28 @@ func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse
 
 	var userCoins int
 	err := r.db.QueryRowxContext(ctx, getCoins, userId).Scan(&userCoins)
-	if err != nil {
-		return &dto.InfoResponse{}, err
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	} else if err != nil {
+		return nil, err
 	}
 
 	var userInventory []dto.Inventory
 	err = r.db.SelectContext(ctx, &userInventory, getUserInventory, userId)
 	if err != nil {
-		return &dto.InfoResponse{}, err
+		return nil, err
 	}
 
 	var userRecieved []dto.Received
 	err = r.db.SelectContext(ctx, &userRecieved, getUserRecieved, userId)
 	if err != nil {
-		return &dto.InfoResponse{}, err
+		return nil, err
 	}
 
 	var userSent []dto.Sent
 	err = r.db.SelectContext(ctx, &userSent, getUserSent, userId)
 	if err != nil {
-		return &dto.InfoResponse{}, err
+		return nil, err
 	}
 
 	return &dto.InfoResponse{
@@ -146,9 +156,9 @@ func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse
 }
 
 func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, amount int) error {
-	logrus.Info("SendCoin: ", toUser, ", amount: ", amount)
-	tx, err := r.db.BeginTxx(ctx, nil)
+	logrus.Info("SendCoin: ", "fromUser: ", fromUserId, " toUser: ", toUser, " amount: ", amount)
 
+	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
 			logrus.Error(err)
@@ -161,32 +171,35 @@ func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, am
 
 	var toUserId int
 	err = tx.QueryRowContext(ctx, getIdFromUsers, toUser).Scan(&toUserId)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return ErrUserToNotFound
+	} else if err != nil {
+		return err
+	}
 
 	var userCoins int
 	err = tx.QueryRowxContext(ctx, getCoinsFromUser, fromUserId).Scan(&userCoins)
-	logrus.Info("select coins fromUser")
-	if err != nil {
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
 		return err
 	}
 
 	_, err = tx.ExecContext(ctx, getCoinsToUser, toUser)
-	logrus.Info("select coins toUser")
 	if err != nil {
 		return err
 	}
 
 	if userCoins < amount {
-		return errors.New("Not enough coins")
+		return ErrNotEnoughCoins
 	}
 
 	_, err = tx.ExecContext(ctx, updateCoinsFromUser, amount, fromUserId)
-	logrus.Info("update coins fromUser")
 	if err != nil {
 		return err
 	}
 
 	_, err = tx.ExecContext(ctx, updateCoinsToUser, amount, toUser)
-	logrus.Info("update coins toUser")
 	if err != nil {
 		return err
 	}
@@ -204,6 +217,8 @@ func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, am
 }
 
 func (r *Repository) CreateUser(ctx context.Context, username, password string) (int, error) {
+	logrus.Info("CreateUser: ", "username: ", username, " password: ", password)
+
 	var id int
 	err := r.db.QueryRowxContext(ctx, insertToUsers, username, password, r.cfg.DefaultCoins).Scan(&id)
 	if err != nil {

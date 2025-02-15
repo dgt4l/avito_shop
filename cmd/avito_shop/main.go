@@ -30,7 +30,7 @@ func main() {
 	auth := auth.NewAuth(cfg.AuthConfig)
 	srv := controller.NewShopService(db, auth, cfg.ServiceConfig)
 
-	sh := handler.NewShopHandler(srv, auth)
+	sh := handler.NewShopHandler(srv, auth, cfg.AppPort)
 
 	go sh.Start()
 

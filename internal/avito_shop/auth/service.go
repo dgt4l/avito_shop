@@ -6,7 +6,6 @@ import (
 
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
 	"github.com/golang-jwt/jwt"
-	"github.com/sirupsen/logrus"
 )
 
 type AuthService interface {
@@ -25,7 +24,6 @@ func NewAuth(cfg AuthConfig) *ServiceAuth {
 }
 
 func (s *ServiceAuth) GenerateToken(user *models.User) (string, error) {
-	logrus.Info("id:", user.Id)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.MapClaims{
 		"id":         user.Id,
 		"username":   user.Username,
