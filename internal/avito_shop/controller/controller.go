@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	config "github.com/dgt4l/avito_shop/configs/avito_shop"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/auth"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
@@ -22,10 +21,10 @@ type Repository interface {
 type ShopService struct {
 	repo Repository
 	auth auth.AuthService
-	cfg  *config.Config
+	cfg  ServiceConfig
 }
 
-func NewShopService(repo Repository, auth auth.AuthService, cfg *config.Config) *ShopService {
+func NewShopService(repo Repository, auth auth.AuthService, cfg ServiceConfig) *ShopService {
 	return &ShopService{
 		repo: repo,
 		auth: auth,

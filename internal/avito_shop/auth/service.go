@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	config "github.com/dgt4l/avito_shop/configs/avito_shop"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
 	"github.com/golang-jwt/jwt"
 	"github.com/sirupsen/logrus"
@@ -16,10 +15,10 @@ type AuthService interface {
 }
 
 type ServiceAuth struct {
-	cfg *config.Config
+	cfg AuthConfig
 }
 
-func NewAuth(cfg *config.Config) *ServiceAuth {
+func NewAuth(cfg AuthConfig) *ServiceAuth {
 	return &ServiceAuth{
 		cfg: cfg,
 	}
@@ -31,7 +30,7 @@ func (s *ServiceAuth) GenerateToken(user *models.User) (string, error) {
 		"id":         user.Id,
 		"username":   user.Username,
 		"password":   user.Password,
-		"expires_at": time.Now().Add(config.TokenTTL).Unix(),
+		"expires_at": time.Now().Add(TokenTTL).Unix(),
 	})
 
 	return token.SignedString([]byte(s.cfg.SigningKey))

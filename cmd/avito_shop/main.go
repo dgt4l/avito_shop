@@ -19,16 +19,16 @@ func main() {
 
 	cfg, err := config.LoadConfig(".")
 	if err != nil {
-		logrus.Fatalf("Failed to load config: %v", err)
+		logrus.Fatalf("Failed to load Config: %v", err)
 	}
 
-	db, err := repository.NewRepository(&cfg)
+	db, err := repository.NewRepository(cfg.DBConfig)
 	if err != nil {
 		logrus.Fatalf("Failed to init db: %v", err)
 	}
 
-	auth := auth.NewAuth(&cfg)
-	srv := controller.NewShopService(db, auth, &cfg)
+	auth := auth.NewAuth(cfg.AuthConfig)
+	srv := controller.NewShopService(db, auth, cfg.ServiceConfig)
 
 	sh := handler.NewShopHandler(srv, auth)
 

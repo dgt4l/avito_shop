@@ -1,0 +1,18 @@
+app_name: avito_shop
+app_port: "8080"
+
+db_config:
+  db_driver: postgresql
+  db_user: postgres
+  db_password: postgres
+  db_host: localhost
+  db_port: "5432"
+  db_name: mydb
+  db_ssl: disable
+  default_coins: 1000
+
+auth_config:
+  jwt_signing_key: lsdlmlskndfkjinev
+  
+service_config:
+  hash_salt: avwaepdqwdioqkpf

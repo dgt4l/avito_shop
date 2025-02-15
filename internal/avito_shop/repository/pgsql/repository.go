@@ -9,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	config "github.com/dgt4l/avito_shop/configs/avito_shop"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
 
@@ -18,10 +17,10 @@ import (
 
 type Repository struct {
 	db  *sqlx.DB
-	cfg *config.Config
+	cfg DBConfig
 }
 
-func NewRepository(config *config.Config) (*Repository, error) {
+func NewRepository(config DBConfig) (*Repository, error) {
 	db, err := sqlx.Open(
 		"postgres", fmt.Sprintf(
 			"%s://%s:%s@%s:%s/%s?sslmode=%s",
