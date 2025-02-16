@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"time"
 
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
@@ -37,7 +36,7 @@ func (s *ServiceAuth) GenerateToken(user *models.User) (string, error) {
 func (s *ServiceAuth) ParseToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, ErrInvalidSignMethod
 		}
 
 		return []byte(s.cfg.SigningKey), nil
@@ -49,9 +48,9 @@ func (s *ServiceAuth) ParseToken(tokenString string) (int, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		id, ok := claims["id"].(float64)
 		if !ok {
-			return 0, errors.New("claim parsing id fails")
+			return 0, ErrClaimIdFails
 		}
 		return int(id), nil
 	}
-	return 0, errors.New("claim missing")
+	return 0, ErrClaimMissing
 }
