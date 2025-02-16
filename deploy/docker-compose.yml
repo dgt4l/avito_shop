@@ -9,34 +9,38 @@ services:
     environment:
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
-      - db
+      db:
+          condition: service_healthy
     volumes:
-      - .:/app
-      - /app/bin
+      - ../test_config.yaml:/root/test_config.yaml
     networks:
       - appnetwork
 
   db:
     image: postgres:17
-    container_name: ${DB_CONTAINER_NAME}
+    container_name: ${POSTGRES_DB}
     restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${DB_PORT}:5432"
+    healthcheck:
+      test: 'psql -w -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -c "SELECT 1"'
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ../migrations:/docker-entrypoint-initdb.d
     networks:
       - appnetwork
 
-volumes:
-  pgdata:
 
 networks:
   appnetwork:

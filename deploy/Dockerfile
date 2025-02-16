@@ -1,4 +1,4 @@
-FROM golang:1.23.6 as builder
+FROM golang:1.23.6-alpine3.20 as builder
 
 WORKDIR /app
 
@@ -15,5 +15,7 @@ FROM debian:bookworm-slim
 WORKDIR /root/
 
 COPY --from=builder /app/bin/avito_shop .
+
+EXPOSE 8080
 
 CMD ["./avito_shop"]

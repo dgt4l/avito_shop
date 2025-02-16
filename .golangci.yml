@@ -13,5 +13,3 @@ linters:
       - style
       - test
       - unused
-      - revive
-      - exportloopref

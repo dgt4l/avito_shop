@@ -50,6 +50,12 @@ func (s *ServiceAuth) ParseToken(tokenString string) (int, error) {
 		if !ok {
 			return 0, ErrClaimIdFails
 		}
+
+		expiresAt, ok := claims["expires_at"].(float64)
+		if !ok || time.Now().After(time.Unix(int64(expiresAt), 0)) {
+			return 0, ErrTokenExpired
+		}
+
 		return int(id), nil
 	}
 	return 0, ErrClaimMissing

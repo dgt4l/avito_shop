@@ -7,3 +7,5 @@ var ErrInvalidSignMethod = errors.New("invalid signing method")
 var ErrClaimIdFails = errors.New("claim parsing id fails")
 
 var ErrClaimMissing = errors.New("claim missing")
+
+var ErrTokenExpired = errors.New("token expired")

@@ -2,11 +2,11 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
+	repository "github.com/dgt4l/avito_shop/internal/avito_shop/repository/pgsql"
 	"github.com/dgt4l/avito_shop/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -119,7 +119,7 @@ func TestShopService_AuthUser_NewUser(t *testing.T) {
 	expectedUser := &models.User{Id: 1, Username: "user1", Password: "password1"}
 	expectedToken := "test-token"
 
-	mockRepo.EXPECT().GetUser(ctx, req.Username).Return(nil, errors.New("user not found"))
+	mockRepo.EXPECT().GetUser(ctx, req.Username).Return(nil, repository.ErrUserNotFound)
 	mockRepo.EXPECT().CreateUser(ctx, req.Username, gomock.Any()).Return(1, nil)
 	mockAuth.EXPECT().GenerateToken(expectedUser).Return(expectedToken, nil)
 
