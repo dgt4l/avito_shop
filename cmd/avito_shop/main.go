@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	config "github.com/dgt4l/avito_shop/configs/avito_shop"
@@ -35,7 +36,7 @@ func main() {
 	go sh.Start()
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-quit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -47,4 +48,10 @@ func main() {
 	if err := sh.Close(ctx); err != nil {
 		logrus.Fatal(err)
 	}
+
+	select {
+	case <-ctx.Done():
+		logrus.Println("timeout of 3 seconds")
+	}
+	logrus.Println("Server exiting")
 }

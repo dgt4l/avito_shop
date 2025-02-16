@@ -52,7 +52,6 @@ func (r *Repository) Close() error {
 }
 
 func (r *Repository) GetUser(ctx context.Context, username string) (*models.User, error) {
-	logrus.Info("GetUser: ", username)
 	var user models.User
 	err := r.db.QueryRowxContext(ctx, getFromUsers, username).StructScan(&user)
 
@@ -66,7 +65,6 @@ func (r *Repository) GetUser(ctx context.Context, username string) (*models.User
 }
 
 func (r *Repository) BuyItem(ctx context.Context, userId int, item string) error {
-	logrus.Info("r.BuyItem: ", "id: ", userId, " item: ", item)
 
 	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
@@ -117,7 +115,6 @@ func (r *Repository) BuyItem(ctx context.Context, userId int, item string) error
 }
 
 func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse, error) {
-	logrus.Info("GetInfo: ", userId)
 
 	var userCoins int
 	err := r.db.QueryRowxContext(ctx, getCoins, userId).Scan(&userCoins)
@@ -156,8 +153,6 @@ func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse
 }
 
 func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, amount int) error {
-	logrus.Info("SendCoin: ", "fromUser: ", fromUserId, " toUser: ", toUser, " amount: ", amount)
-
 	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
@@ -217,8 +212,6 @@ func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, am
 }
 
 func (r *Repository) CreateUser(ctx context.Context, username, password string) (int, error) {
-	logrus.Info("CreateUser: ", "username: ", username, " password: ", password)
-
 	var id int
 	err := r.db.QueryRowxContext(ctx, insertToUsers, username, password, r.cfg.DefaultCoins).Scan(&id)
 	if err != nil {

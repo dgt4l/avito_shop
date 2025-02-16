@@ -17,17 +17,17 @@ func (h *ShopHandler) AuthMiddleware() echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			header := ctx.Request().Header.Get(authorizationHeader)
 			if header == "" {
-				return ctx.JSON(http.StatusUnauthorized, dto.UnauthorizedResponse{Errors: "empty token"})
+				return ctx.JSON(http.StatusUnauthorized, dto.UnauthorizedResponse{Errors: ErrEmptyToken.Error()})
 			}
 
 			headerSplit := strings.Split(header, " ")
 			if len(headerSplit) != 2 {
-				return ctx.JSON(http.StatusUnauthorized, dto.UnauthorizedResponse{Errors: "invalid auth header"})
+				return ctx.JSON(http.StatusUnauthorized, dto.UnauthorizedResponse{Errors: ErrInvalidAuthHeader.Error()})
 			}
 
 			id, err := h.auth.ParseToken(headerSplit[1])
 			if err != nil {
-				return ctx.JSON(http.StatusUnauthorized, dto.UnauthorizedResponse{Errors: err.Error()})
+				return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 			}
 
 			ctx.Set("id", id)

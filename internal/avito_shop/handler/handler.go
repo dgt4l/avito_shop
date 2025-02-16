@@ -10,6 +10,7 @@ import (
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 	repository "github.com/dgt4l/avito_shop/internal/avito_shop/repository/pgsql"
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 type ShopService interface {
@@ -52,6 +53,10 @@ func (h *ShopHandler) Close(ctx context.Context) error {
 }
 
 func (h *ShopHandler) BuyItem(ctx echo.Context) error {
+	const op = "internal.avito.shop.handler.ShopHandler.BuyItem"
+
+	logrus.WithFields(logrus.Fields{"event": op}).Info(ctx.Get("id"))
+
 	var request dto.BuyItemRequest
 	if err := ctx.Bind(&request); err != nil {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrEmptyItemName.Error()})
@@ -65,6 +70,8 @@ func (h *ShopHandler) BuyItem(ctx echo.Context) error {
 	}
 
 	if err != nil {
+		logrus.WithFields(logrus.Fields{"event": op, "request": request}).Error(err)
+
 		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
@@ -72,6 +79,10 @@ func (h *ShopHandler) BuyItem(ctx echo.Context) error {
 }
 
 func (h *ShopHandler) SendCoin(ctx echo.Context) error {
+	const op = "internal.avito.shop.handler.ShopHandler.SendCoin"
+
+	logrus.WithFields(logrus.Fields{"event": op}).Info(ctx.Get("id"))
+
 	var request dto.SendCoinRequest
 
 	if err := ctx.Bind(&request); err != nil {
@@ -92,6 +103,8 @@ func (h *ShopHandler) SendCoin(ctx echo.Context) error {
 	}
 
 	if err != nil {
+		logrus.WithFields(logrus.Fields{"event": op, "fromUser": fromUserId, "request": request}).Error(err)
+
 		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
@@ -99,11 +112,15 @@ func (h *ShopHandler) SendCoin(ctx echo.Context) error {
 }
 
 func (h *ShopHandler) AuthUser(ctx echo.Context) error {
+	const op = "internal.avito.shop.handler.ShopHandler.AuthUser"
+
 	var request dto.AuthRequest
 
 	if err := ctx.Bind(&request); err != nil {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrInvalidDataType.Error()})
 	}
+
+	logrus.WithFields(logrus.Fields{"event": op}).Info(request)
 
 	response, err := h.shopService.AuthUser(ctx.Request().Context(), &request)
 	if err != nil && (errors.Is(err, controller.ErrShortPassword) ||
@@ -113,6 +130,8 @@ func (h *ShopHandler) AuthUser(ctx echo.Context) error {
 	}
 
 	if err != nil {
+		logrus.WithFields(logrus.Fields{"event": op, "request": request}).Error(err)
+
 		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
@@ -120,13 +139,20 @@ func (h *ShopHandler) AuthUser(ctx echo.Context) error {
 }
 
 func (h *ShopHandler) GetInfo(ctx echo.Context) error {
+	const op = "internal.avito.shop.handler.ShopHandler.GetInfo"
+
 	userId, ok := ctx.Get("id").(int)
+
+	logrus.WithFields(logrus.Fields{"event": op}).Info(userId)
+
 	if !ok {
 		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	response, err := h.shopService.GetInfo(ctx.Request().Context(), userId)
 	if err != nil {
+		logrus.WithFields(logrus.Fields{"event": op, "userId": userId}).Error(err)
+
 		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
