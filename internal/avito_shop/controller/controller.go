@@ -40,18 +40,21 @@ func (s *ShopService) GetInfo(ctx context.Context, userId int) (*dto.InfoRespons
 }
 
 func (s *ShopService) SendCoin(ctx context.Context, fromUserId int, request *dto.SendCoinRequest) error {
+	if err := ValidateSendCoin(request); err != nil {
+		return err
+	}
 	return s.repo.SendCoin(ctx, request.ToUser, fromUserId, request.Amount)
 }
 
 func (s *ShopService) CreateUser(ctx context.Context, request *dto.AuthRequest) (*models.User, error) {
 	password_hash, err := s.generatePasswordHash(request.Password)
 	if err != nil {
-		return &models.User{}, err
+		return nil, err
 	}
 
 	id, err := s.repo.CreateUser(ctx, request.Username, password_hash)
 	if err != nil {
-		return &models.User{}, err
+		return nil, err
 	}
 
 	user := models.User{
@@ -72,6 +75,9 @@ func (s *ShopService) generatePasswordHash(password string) (string, error) {
 }
 
 func (s *ShopService) AuthUser(ctx context.Context, request *dto.AuthRequest) (*dto.AuthResponse, error) {
+	if err := ValidateAuth(request); err != nil {
+		return nil, err
+	}
 	user, err := s.repo.GetUser(ctx, request.Username)
 	if err != nil {
 		user, err = s.CreateUser(ctx, request)

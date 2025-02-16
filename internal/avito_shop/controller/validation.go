@@ -1,12 +1,12 @@
-package handler
+package controller
 
 import (
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 )
 
 func ValidateAuth(request *dto.AuthRequest) error {
-	if request.Username == "" {
-		return ErrEmptyUsername
+	if len(request.Username) < 4 {
+		return ErrShortUsername
 	}
 
 	if len(request.Password) < 8 {
@@ -17,8 +17,8 @@ func ValidateAuth(request *dto.AuthRequest) error {
 }
 
 func ValidateSendCoin(request *dto.SendCoinRequest) error {
-	if request.ToUser == "" {
-		return ErrEmptyUsername
+	if len(request.ToUser) < 4 {
+		return ErrShortUsername
 	}
 
 	if request.Amount <= 0 {

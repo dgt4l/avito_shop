@@ -60,16 +60,12 @@ func (h *ShopHandler) BuyItem(ctx echo.Context) error {
 	request.Id = ctx.Get("id").(int)
 
 	err := h.shopService.BuyItem(ctx.Request().Context(), &request)
-	if err != nil && errors.Is(err, repository.ErrNotEnoughCoins) {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
-	}
-
-	if err != nil && errors.Is(err, repository.ErrItemNotFound) {
+	if err != nil && (errors.Is(err, repository.ErrNotEnoughCoins) || errors.Is(err, repository.ErrItemNotFound)) {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
 	}
 
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -79,29 +75,24 @@ func (h *ShopHandler) SendCoin(ctx echo.Context) error {
 	var request dto.SendCoinRequest
 
 	if err := ctx.Bind(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
-	}
-
-	if err := ValidateSendCoin(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrInvalidDataType.Error()})
 	}
 
 	fromUserId, ok := ctx.Get("id").(int)
 	if !ok {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	err := h.shopService.SendCoin(ctx.Request().Context(), fromUserId, &request)
-	if err != nil && errors.Is(err, repository.ErrNotEnoughCoins) {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
-	}
-
-	if err != nil && errors.Is(err, repository.ErrUserToNotFound) {
+	if err != nil && (errors.Is(err, controller.ErrShortUsername) ||
+		errors.Is(err, controller.ErrInvalidAmount) ||
+		errors.Is(err, repository.ErrNotEnoughCoins) ||
+		errors.Is(err, repository.ErrUserToNotFound)) {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
 	}
 
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, nil)
@@ -111,18 +102,18 @@ func (h *ShopHandler) AuthUser(ctx echo.Context) error {
 	var request dto.AuthRequest
 
 	if err := ctx.Bind(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
-	}
-
-	if err := ValidateAuth(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrInvalidDataType.Error()})
 	}
 
 	response, err := h.shopService.AuthUser(ctx.Request().Context(), &request)
-	if err != nil && errors.Is(err, controller.ErrInvalidPasswd) {
+	if err != nil && (errors.Is(err, controller.ErrShortPassword) ||
+		errors.Is(err, controller.ErrShortUsername) ||
+		errors.Is(err, controller.ErrInvalidPasswd)) {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
-	} else if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+	}
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, response)
@@ -131,12 +122,12 @@ func (h *ShopHandler) AuthUser(ctx echo.Context) error {
 func (h *ShopHandler) GetInfo(ctx echo.Context) error {
 	userId, ok := ctx.Get("id").(int)
 	if !ok {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	response, err := h.shopService.GetInfo(ctx.Request().Context(), userId)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: InternalServerError.Error()})
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
 	}
 
 	return ctx.JSON(http.StatusOK, response)

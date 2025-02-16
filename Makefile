@@ -13,7 +13,7 @@ COVER_DIR      := build/
 BUILD_CMD      := go build $(BUILD_FLAGS) -o $(BIN_DIR)/$(APP_NAME) $(FULL_SRC_PATH)
 
 # Tool Configurations
-GCI_CONFIG_PATH    := configs/misc/.golangci.yml
+GCI_CONFIG_PATH    := .golangci.yml
 D_COMPOSE_YML_PATH := deploy/docker-compose.yml
 DOCKERFILE_PATH    := deploy/Dockerfile
 D_COMPOSE_CMD      := docker compose
