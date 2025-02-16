@@ -24,10 +24,15 @@ make docker-buildup
 ```shell
 cd deploy
 ```
+Включить сборку:
 ```shell
-docker compose --env-file .env.dev
+docker compose --env-file .env.dev up --build -d
 ```
-#### Локально
+Без сборки:
+```shell
+docker compose --env-file .env.dev up -d
+```
+#### Локально(без поднятия БД)
 
 ```shell
 go run cmd/avito_shop/main.go
