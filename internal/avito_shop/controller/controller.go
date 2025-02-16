@@ -2,10 +2,12 @@ package controller
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dgt4l/avito_shop/internal/avito_shop/auth"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/dto"
 	"github.com/dgt4l/avito_shop/internal/avito_shop/models"
+	repository "github.com/dgt4l/avito_shop/internal/avito_shop/repository/pgsql"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -32,6 +34,10 @@ func NewShopService(repo Repository, auth auth.AuthService, cfg ServiceConfig) *
 }
 
 func (s *ShopService) BuyItem(ctx context.Context, request *dto.BuyItemRequest) error {
+	if err := ValidateBuyItem(request); err != nil {
+		return err
+	}
+
 	return s.repo.BuyItem(ctx, request.Id, request.Item)
 }
 
@@ -43,6 +49,7 @@ func (s *ShopService) SendCoin(ctx context.Context, fromUserId int, request *dto
 	if err := ValidateSendCoin(request); err != nil {
 		return err
 	}
+
 	return s.repo.SendCoin(ctx, request.ToUser, fromUserId, request.Amount)
 }
 
@@ -69,7 +76,7 @@ func (s *ShopService) CreateUser(ctx context.Context, request *dto.AuthRequest) 
 func (s *ShopService) generatePasswordHash(password string) (string, error) {
 	var passwordBytes = []byte(password + s.cfg.Salt)
 
-	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, s.cfg.Cost)
 
 	return string(hashedPasswordBytes), err
 }
@@ -78,8 +85,9 @@ func (s *ShopService) AuthUser(ctx context.Context, request *dto.AuthRequest) (*
 	if err := ValidateAuth(request); err != nil {
 		return nil, err
 	}
+
 	user, err := s.repo.GetUser(ctx, request.Username)
-	if err != nil {
+	if err != nil && errors.Is(err, repository.ErrUserNotFound) {
 		user, err = s.CreateUser(ctx, request)
 		if err != nil {
 			return nil, err
@@ -90,6 +98,10 @@ func (s *ShopService) AuthUser(ctx context.Context, request *dto.AuthRequest) (*
 			return nil, err
 		}
 		return &dto.AuthResponse{Token: token}, nil
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password+s.cfg.Salt)); err != nil {

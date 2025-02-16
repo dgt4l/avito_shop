@@ -27,3 +27,11 @@ func ValidateSendCoin(request *dto.SendCoinRequest) error {
 
 	return nil
 }
+
+func ValidateBuyItem(request *dto.BuyItemRequest) error {
+	if request.Item == "" {
+		return ErrEmptyItemName
+	}
+
+	return nil
+}

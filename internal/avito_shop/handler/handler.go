@@ -59,13 +59,19 @@ func (h *ShopHandler) BuyItem(ctx echo.Context) error {
 
 	var request dto.BuyItemRequest
 	if err := ctx.Bind(&request); err != nil {
-		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrEmptyItemName.Error()})
+		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: ErrInvalidDataType.Error()})
 	}
 
-	request.Id = ctx.Get("id").(int)
+	var ok bool
+	request.Id, ok = ctx.Get("id").(int)
+	if !ok {
+		return ctx.JSON(http.StatusInternalServerError, dto.InternalServerErrorResponse{Errors: ErrInternalServer.Error()})
+	}
 
 	err := h.shopService.BuyItem(ctx.Request().Context(), &request)
-	if err != nil && (errors.Is(err, repository.ErrNotEnoughCoins) || errors.Is(err, repository.ErrItemNotFound)) {
+	if err != nil && (errors.Is(err, repository.ErrNotEnoughCoins) ||
+		errors.Is(err, repository.ErrItemNotFound) ||
+		errors.Is(err, controller.ErrEmptyItemName)) {
 		return ctx.JSON(http.StatusBadRequest, dto.BadRequestResponse{Errors: err.Error()})
 	}
 

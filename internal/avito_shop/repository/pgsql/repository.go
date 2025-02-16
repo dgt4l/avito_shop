@@ -65,11 +65,12 @@ func (r *Repository) GetUser(ctx context.Context, username string) (*models.User
 }
 
 func (r *Repository) BuyItem(ctx context.Context, userId int, item string) error {
+	const op = "internal.avito_shop.repository.BuyItem"
 
 	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			logrus.Error(err)
+			logrus.WithFields(logrus.Fields{"event": op}).Error(err)
 		}
 	}()
 
@@ -115,7 +116,6 @@ func (r *Repository) BuyItem(ctx context.Context, userId int, item string) error
 }
 
 func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse, error) {
-
 	var userCoins int
 	err := r.db.QueryRowxContext(ctx, getCoins, userId).Scan(&userCoins)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
@@ -153,10 +153,12 @@ func (r *Repository) GetInfo(ctx context.Context, userId int) (*dto.InfoResponse
 }
 
 func (r *Repository) SendCoin(ctx context.Context, toUser string, fromUserId, amount int) error {
+	const op = "internal.avito_shop.repository.SendItem"
+
 	tx, err := r.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			logrus.Error(err)
+			logrus.WithFields(logrus.Fields{"event": op}).Error(err)
 		}
 	}()
 

@@ -16,3 +16,4 @@ auth_config:
   
 service_config:
   hash_salt: avwaepdqwdioqkpf
+  hash_cost: 7
