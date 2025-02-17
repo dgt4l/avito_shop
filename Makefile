@@ -10,6 +10,10 @@ BIN_DIR        := bin/
 BUILD_FLAGS    := -ldflags="-s -w"
 BUILD_CMD      := go build $(BUILD_FLAGS) -o $(BIN_DIR)/$(APP_NAME) $(FULL_SRC_PATH)
 COV_FILE	   := cov.out
+HDL_COV_FILE   := handler.out
+CTL_COV_FILE   := controller.out
+RPT_COV_FILE   := repository.out
+AUTH_COV_FILE  := auth.out
 
 # Tool Configurations
 GCI_CONFIG_PATH    := .golangci.yml
@@ -22,7 +26,7 @@ MIGRATION_DIR           := migrations/
 MIGRATION_COMMAND_SETUP := migrate -path $(MIGRATION_DIR) -database "$(DB_DRIVER)://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
 
 # Phony Targets
-.PHONY: help all build run coverage clean test lint mod docker-up docker-down docker-buildup docker-restart
+.PHONY: help all build run coverage cov-auth cov-handler cov-controller cov-repository clean test lint end-to-end mod docker-up docker-down docker-buildup docker-restart
 
 all: run
 
@@ -33,12 +37,28 @@ build:  ## Build binary
 run: build ## Build and run the application
 	@./$(BIN_DIR)/$(APP_NAME)
 
-coverage: ## Run tests with coverage
+coverage: ## Run all tests with coverage
 	@go test -coverprofile=${COV_FILE} ./internal/... && go tool cover -func=${COV_FILE}
+
+cov-auth: ## Run auth cov-tests
+	@go test -coverprofile=${AUTH_COV_FILE} ./internal/${APP_NAME}/handler/... && go tool cover -func=${AUTH_COV_FILE}
+
+cov-handler: ## Run handler cov-tests
+	@go test -coverprofile=${HDL_COV_FILE} ./internal/${APP_NAME}/handler/... && go tool cover -func=${HDL_COV_FILE}
+
+cov-controller: ## Run controller cov-tests
+	@go test -coverprofile=${CTL_COV_FILE} ./internal/${APP_NAME}/controller/... && go tool cover -func=${CTL_COV_FILE}
+
+cov-repository: ## RUn repository cov-tests
+	@go test -coverprofile=${RPT_COV_FILE} ./internal/${APP_NAME}/repository/... && go tool cover -func=${RPT_COV_FILE}
 
 clean: ## Remove binaries
 	@rm -rf $(BIN_DIR) 
 	@rm ${COV_FILE}
+	@rm ${HDL_COV_FILE}
+	@rm ${CTL_COV_FILE}
+	@rm ${RPT_COV_FILE}
+	@rm ${AUTH_COV_FILE}
 	@go clean
 
 test: ## Run tests
@@ -46,6 +66,9 @@ test: ## Run tests
 
 lint: ## Run linters
 	@golangci-lint -v run --config $(GCI_CONFIG_PATH)
+
+end-to-end: ## Run e2e tests (Running DB required)
+	@go test ./test/e2e
 
 mod: ## Update dependencies
 	@go mod tidy

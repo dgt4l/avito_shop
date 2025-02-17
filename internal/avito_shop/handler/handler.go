@@ -168,3 +168,7 @@ func (h *ShopHandler) GetInfo(ctx echo.Context) error {
 func (h *ShopHandler) Ping(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, "pong")
 }
+
+func (h *ShopHandler) GetEcho() *echo.Echo {
+	return h.e
+}
